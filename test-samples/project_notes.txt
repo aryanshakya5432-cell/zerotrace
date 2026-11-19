@@ -1,0 +1,23 @@
+ZeroTrace — Demo Test Notes
+================================
+
+Project: Unified URL & Malware Threat Scanner
+Owner:   Security Operations (demo tenant)
+Date:    2026-02-14
+
+Meeting notes
+-------------
+- Weekly triage review moved to Thursday 10:00 IST.
+- The scanner hashes files in the browser before upload, so the 4.5 MB
+  serverless body limit is never reached.
+- URL checks run DNS and TLS probes with a 3 second ceiling.
+- Reminder: rotate the staging API keys before the customer demo.
+
+TODO
+----
+[x] Bento-grid results layout
+[x] Three one-click demo targets
+[ ] Add PDF report export
+[ ] Wire the ticketing webhook
+
+This file is intentionally boring. It should score 0 / SAFE.

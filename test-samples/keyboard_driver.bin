@@ -1,0 +1,14 @@
+; keyboard_driver.bin — synthetic driver manifest (harmless)
+[driver]
+name = zt_keyboard_filter
+description = Demo keyboard filter used to exercise the spyware heuristic
+
+[imports]
+user32.dll!SetWindowsHookExA
+user32.dll!GetAsyncKeyState
+user32.dll!GetKeyboardState
+user32.dll!MapVirtualKeyA
+
+[notes]
+No executable code is present. These API names exist only so the ZeroTrace
+signature engine can classify the sample as a keylogger hook.
