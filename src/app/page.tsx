@@ -159,13 +159,13 @@ export default function Home() {
           </h1>
           <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-slate-400 sm:text-sm">
             One omni-scanner for suspicious links and hostile files. URLs get
-            eight live heuristics plus TLS validation; payloads are hashed in
-            your browser and triaged against magic bytes, entropy, injection
-            APIs and signature databases.
+            nine live checks plus TLS validation and two cloud threat feeds;
+            payloads are hashed in your browser and triaged against magic
+            bytes, entropy, injection APIs and signature databases.
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <HeroStat icon={Globe2} value="8" label="URL heuristics" />
+            <HeroStat icon={Globe2} value="9" label="URL checks" />
             <HeroStat icon={FileSearch} value="9" label="File checks" />
             <HeroStat icon={Timer} value="3s" label="Socket ceiling" />
             <HeroStat icon={HardDrive} value="0 B" label="Raw file uploaded" />

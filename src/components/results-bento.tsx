@@ -201,7 +201,10 @@ export function ResultsBento({ result }: { result: ScanResult }) {
 
         <div className="mt-4 grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {Object.entries(result.metadata).map(([key, value]) => {
-            const wide = key === "SHA-256" || key === "Sampled";
+            const wide =
+              key === "SHA-256" ||
+              key === "Sampled" ||
+              key === "Cloud API Status";
             return (
               <div
                 key={key}
@@ -314,6 +317,11 @@ export function ResultsBento({ result }: { result: ScanResult }) {
 }
 
 function toneFor(key: string, value: string): string {
+  if (key === "Cloud API Status") {
+    if (/\bHIT\b/.test(value)) return "text-rose-300";
+    if (/\bFALLBACK\b/.test(value)) return "text-amber-300";
+    return "text-emerald-300";
+  }
   if (key === "SSL Status") {
     return value === "VALID"
       ? "text-emerald-300"

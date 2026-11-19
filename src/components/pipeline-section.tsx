@@ -32,7 +32,7 @@ const STEPS = [
     step: "03",
     title: "Rule & API Engine",
     description:
-      "Eight URL heuristics with live DNS + TLS probes, nine static file checks and an optional VirusTotal v3 reputation lookup.",
+      "Nine URL checks with live DNS + TLS probes and two cloud threat feeds, plus nine static file checks with an optional VirusTotal v3 lookup.",
     icon: Radar,
     accent: "text-sky-300",
     ring: "border-sky-400/25 bg-sky-400/10",

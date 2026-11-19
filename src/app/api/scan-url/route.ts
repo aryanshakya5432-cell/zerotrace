@@ -2,6 +2,7 @@ import dns from "node:dns/promises";
 import tls from "node:tls";
 
 import { clampScore, verdictFromScore } from "@/lib/risk";
+import { checkThreatIntel } from "@/lib/threat-intel";
 import type { ScanCheck, ScanResult } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -30,6 +31,12 @@ const PHISHING_KEYWORDS = [
   "paytm",
   "g00gle",
   "amaz0n",
+  "phishing",
+  "malware",
+  "signin",
+  "banking",
+  "claim",
+  "bonus",
 ];
 
 const IPV4 = /^(\d{1,3}\.){3}\d{1,3}$/;
@@ -429,8 +436,11 @@ export async function POST(request: Request) {
     weight: Math.min(36, keywordHits.length * 12),
   });
 
-  // 7 — Live DNS
-  const dnsVerdict = await resolveDns(host);
+  // 7 — Live DNS + 9 — cloud threat-intel feeds (run concurrently)
+  const [dnsVerdict, intel] = await Promise.all([
+    resolveDns(host),
+    checkThreatIntel(target),
+  ]);
   addCheck({
     id: "dns-resolution",
     label: "Live DNS A-Record Resolution",
@@ -463,14 +473,30 @@ export async function POST(request: Request) {
     label: "Live HTTPS / TLS Certificate",
     status: tlsVerdict.valid ? "PASS" : "FLAGGED",
     detail: tlsVerdict.detail,
-    weight: 20,
+    // Plain HTTP is a harder penalty so a bare http:// link is always SUSPICIOUS.
+    weight: protocol === "http:" ? 25 : 20,
   });
 
-  const finalScore = clampScore(score);
+  // 9 — Cloud threat intelligence
+  addCheck({
+    id: "threat-intel",
+    label: "Cloud Threat Intelligence (VirusTotal + Safe Browsing)",
+    status: intel.hit ? "FLAGGED" : "PASS",
+    detail: intel.hit
+      ? `${intel.summary}. A confirmed feed hit floors the risk score at 80.`
+      : intel.checked
+        ? `${intel.summary}. No provider returned a malicious or suspicious verdict.`
+        : `${intel.summary}.`,
+    weight: intel.hit ? 80 : 0,
+  });
+
+  const finalScore = clampScore(intel.hit ? Math.max(score, 80) : score);
   const verdict = verdictFromScore(finalScore);
 
   let threatType = "No Threat Detected";
-  if (verdict !== "SAFE") {
+  if (intel.hit) {
+    threatType = "Confirmed Malicious (Threat Intel)";
+  } else if (verdict !== "SAFE") {
     if (decoyUserInfo || keywordHits.length > 0) {
       threatType = "Phishing / Credential Harvest";
     } else if (shortener) {
@@ -493,11 +519,14 @@ export async function POST(request: Request) {
       "Resolved IP": dnsVerdict.address,
       Protocol: protocol.replace(":", "").toUpperCase(),
       "SSL Status": tlsVerdict.status,
+      "Cloud API Status": intel.summary,
       "URL Length": `${target.length} chars`,
     },
     checks,
     scannedAt: new Date().toISOString(),
-    engine: "ZeroTrace Heuristics · DNS + TLS live probes",
+    engine: intel.checked
+      ? "ZeroTrace Heuristics · DNS + TLS + Cloud TI"
+      : "ZeroTrace Heuristics · DNS + TLS live probes",
   };
 
   return Response.json(result);

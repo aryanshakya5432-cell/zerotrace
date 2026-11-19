@@ -54,12 +54,18 @@ Every outbound call (DNS, TLS, VirusTotal) is capped at **3000 ms** with `Promis
 3. URL length above 54 characters
 4. Subdomain depth (> 2 dots) and hyphen abuse
 5. Known shorteners (`bit.ly`, `tinyurl.com`, `t.co`, `goo.gl`, `rb.gy`, `cutt.ly`)
-6. Phishing / typosquat tokens (`login`, `verify`, `kyc`, `update`, `bank`, `sbi`, `hdfc`, `paytm`, `g00gle`, `amaz0n`)
+6. Phishing / typosquat tokens (`login`, `verify`, `kyc`, `update`, `bank`, `sbi`, `hdfc`, `paytm`, `g00gle`, `amaz0n`, `phishing`, `malware`, `signin`, `banking`, `claim`, `bonus`)
 7. Live DNS A-record resolution (`node:dns/promises`)
-8. Live HTTPS/TLS certificate validation (`node:tls`)
+8. Live HTTPS/TLS certificate validation (`node:tls`) — plain HTTP costs **25 points**, so any
+   `http://` link is at least `SUSPICIOUS`
+9. Cloud threat intelligence — VirusTotal URL + Google Safe Browsing, queried in parallel with DNS.
+   A hit from **either** feed (`malicious + suspicious >= 1`, or a Safe Browsing match) floors the
+   score at **80** and forces `MALICIOUS` / `Confirmed Malicious (Threat Intel)`.
 
 Returns `targetType`, `target`, `score`, `verdict`, `threatType`, `metadata` (Domain, Resolved IP,
-Protocol, SSL Status, URL Length) and the full `checks` array.
+Protocol, SSL Status, **Cloud API Status**, URL Length) and the full `checks` array. `Cloud API
+Status` reports each provider as `HIT`, `CLEAN` or `FALLBACK (reason)` — unset keys simply fall back
+to the local heuristics.
 
 ### File engine — `/api/scan-file`
 
@@ -107,7 +113,7 @@ No EICAR string is used anywhere, so Windows Defender should leave the samples a
 
 ```powershell
 npm install
-copy .env.example .env.local   # optional — add VIRUSTOTAL_API_KEY to enable v3 lookups
+copy .env.example .env.local   # optional - add cloud TI keys to enable live lookups
 npm run dev                    # http://localhost:3000
 npm run build                  # production build (Vercel parity)
 npm run lint
@@ -117,7 +123,8 @@ npm run lint
 
 1. Push the folder to a Git repository.
 2. Import it into Vercel — the framework preset is detected automatically.
-3. Optional: add `VIRUSTOTAL_API_KEY` under **Project → Settings → Environment Variables**.
+3. Optional: add `VIRUSTOTAL_API_KEY` and `GOOGLE_SAFE_BROWSING_API_KEY` under **Project →
+   Settings → Environment Variables**.
 4. Deploy. No extra configuration, no blob storage, no file uploads.
 
 ## Layout
@@ -125,7 +132,7 @@ npm run lint
 ```
 src/
 ├── app/
-│   ├── api/scan-url/route.ts     # 8 heuristics + live DNS/TLS
+│   ├── api/scan-url/route.ts     # 9 checks + live DNS/TLS + cloud TI
 │   ├── api/scan-file/route.ts    # 9 static checks + optional VT v3
 │   ├── globals.css               # obsidian/emerald theme + animations
 │   ├── layout.tsx
